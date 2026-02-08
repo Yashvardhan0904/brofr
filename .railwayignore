@@ -1,0 +1,4 @@
+Dockerfile
+docker-compose.yml
+k8s-deployment.yaml
+.dockerignore
