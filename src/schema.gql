@@ -1,0 +1,606 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Address {
+  city: String!
+  country: String!
+  createdAt: DateTime!
+  fullName: String!
+  id: ID!
+  isDefault: Boolean!
+  line1: String!
+  line2: String
+  phone: String!
+  pincode: String!
+  state: String!
+  updatedAt: DateTime!
+  userId: ID!
+}
+
+type AuthResponse {
+  token: String!
+  user: User!
+}
+
+type Category {
+  children: [Category!]
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  image: String
+  name: String!
+  parent: Category
+  parentId: String
+  productCount: Int
+  products: [Product!]
+  slug: String!
+  updatedAt: DateTime!
+}
+
+input ChangePasswordInput {
+  newPassword: String!
+  oldPassword: String!
+}
+
+type Comment {
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  product: Product
+  productId: ID!
+  updatedAt: DateTime!
+  user: User
+  userId: ID!
+}
+
+type CommentsResponse {
+  comments: [Comment!]!
+  hasMore: Boolean!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+input CreateCategoryInput {
+  description: String
+  image: String
+  name: String!
+  parentId: String
+  slug: String!
+}
+
+input CreateCommentInput {
+  content: String!
+  productId: ID!
+}
+
+input CreateOrderInput {
+  items: [OrderItemInput!]!
+  notes: String
+  shippingCity: String!
+  shippingCountry: String!
+  shippingLine1: String!
+  shippingLine2: String
+  shippingName: String!
+  shippingPhone: String!
+  shippingPincode: String!
+  shippingState: String!
+}
+
+input CreateProductInput {
+  categoryId: String!
+  description: String!
+  images: [String!]!
+  isActive: Boolean = true
+  isFeatured: Boolean = false
+  lowStockThreshold: Int = 10
+  metaDescription: String
+  metaTitle: String
+  mrp: Int
+  price: Int!
+  slug: String!
+  stock: Int!
+  thumbnail: String
+  title: String!
+}
+
+input CreateReviewInput {
+  message: String!
+  productId: ID!
+  rating: Int!
+  title: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
+type Like {
+  createdAt: DateTime!
+  product: Product
+  productId: ID!
+  user: User
+  userId: ID!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  """Activate user account (admin only)"""
+  activateUser(userId: ID!): User!
+
+  """Cancel order"""
+  cancelOrder(id: ID!, reason: String): Order!
+
+  """Change user password"""
+  changePassword(input: ChangePasswordInput!): Boolean!
+
+  """Create category (admin only)"""
+  createCategory(input: CreateCategoryInput!): Category!
+
+  """Create a comment"""
+  createComment(input: CreateCommentInput!): Comment!
+
+  """Create order"""
+  createOrder(input: CreateOrderInput!): Order!
+
+  """Create payment intent"""
+  createPaymentIntent(orderId: ID!, provider: PaymentProvider = STRIPE): PaymentIntent!
+
+  """Create product (admin only)"""
+  createProduct(input: CreateProductInput!): Product!
+
+  """Create a review"""
+  createReview(input: CreateReviewInput!): Review!
+
+  """Deactivate user account (admin only)"""
+  deactivateUser(userId: ID!): User!
+
+  """Delete category (admin only)"""
+  deleteCategory(id: ID!): Category!
+
+  """Delete a comment"""
+  deleteComment(id: ID!): Boolean!
+
+  """Delete product (admin only)"""
+  deleteProduct(id: ID!): Product!
+
+  """Delete a review"""
+  deleteReview(id: ID!): Boolean!
+
+  """Initiate refund (admin only)"""
+  initiateRefund(paymentId: ID!, reason: String): Payment!
+
+  """Like a product"""
+  likeProduct(productId: ID!): Like!
+
+  """Login with email and password"""
+  login(input: LoginInput!): AuthResponse!
+
+  """Logout current user"""
+  logout: Boolean!
+
+  """Register a new user"""
+  register(input: RegisterInput!): AuthResponse!
+
+  """Toggle review visibility (admin only)"""
+  toggleReviewVisibility(id: ID!): Review!
+
+  """Unlike a product"""
+  unlikeProduct(productId: ID!): Boolean!
+
+  """Update category (admin only)"""
+  updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
+
+  """Update a comment"""
+  updateComment(id: ID!, input: UpdateCommentInput!): Comment!
+
+  """Update order status (admin only)"""
+  updateOrderStatus(id: ID!, input: UpdateOrderStatusInput!): Order!
+
+  """Update product (admin only)"""
+  updateProduct(id: ID!, input: UpdateProductInput!): Product!
+
+  """Update current user profile"""
+  updateProfile(input: UpdateProfileInput!): User!
+
+  """Update a review"""
+  updateReview(id: ID!, input: UpdateReviewInput!): Review!
+
+  """Update user role (admin only)"""
+  updateUserRole(role: Role!, userId: ID!): User!
+
+  """Verify a review (admin only)"""
+  verifyReview(id: ID!): Review!
+}
+
+type Order {
+  address: Address
+  addressId: ID
+  cancelReason: String
+  createdAt: DateTime!
+  discount: Int!
+  id: ID!
+  items: [OrderItem!]
+  notes: String
+  orderNumber: String!
+  payment: Payment
+  shippingCharge: Int!
+  shippingCity: String!
+  shippingCountry: String!
+  shippingLine1: String!
+  shippingLine2: String
+  shippingName: String!
+  shippingPhone: String!
+  shippingPincode: String!
+  shippingState: String!
+  status: OrderStatus!
+  subtotal: Int!
+  tax: Int!
+  totalAmount: Int!
+  trackingEvents: [OrderTracking!]
+  updatedAt: DateTime!
+  user: User
+  userId: ID!
+}
+
+type OrderItem {
+  id: ID!
+  orderId: ID!
+  pricePerUnit: Int!
+  product: Product
+  productId: ID!
+  productImage: String
+  productTitle: String!
+  quantity: Int!
+  totalPrice: Int!
+}
+
+input OrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+type OrderStats {
+  cancelledOrders: Int!
+  deliveredOrders: Int!
+  paidOrders: Int!
+  pendingOrders: Int!
+  processingOrders: Int!
+  shippedOrders: Int!
+  totalOrders: Int!
+  totalRevenue: Int!
+}
+
+"""Order status enum"""
+enum OrderStatus {
+  CANCELLED
+  DELIVERED
+  PAID
+  PENDING
+  PROCESSING
+  REFUNDED
+  RETURNED
+  SHIPPED
+}
+
+type OrderTracking {
+  createdAt: DateTime!
+  id: ID!
+  location: String
+  note: String
+  orderId: ID!
+  status: OrderStatus!
+}
+
+type OrdersResponse {
+  hasMore: Boolean!
+  orders: [Order!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+type Payment {
+  amount: Int!
+  createdAt: DateTime!
+  currency: String!
+  failureReason: String
+  id: ID!
+  idempotencyKey: String!
+  orderId: ID!
+  paymentMethod: String
+  provider: PaymentProvider!
+  providerOrderId: String
+  providerPaymentId: String
+  status: PaymentStatus!
+  updatedAt: DateTime!
+  userId: ID!
+}
+
+type PaymentIntent {
+  amount: Int!
+  clientSecret: String!
+  currency: String!
+  orderId: ID!
+  paymentId: ID!
+  providerOrderId: String!
+}
+
+"""Payment provider enum"""
+enum PaymentProvider {
+  COD
+  PAYPAL
+  RAZORPAY
+  STRIPE
+}
+
+type PaymentStats {
+  failedPayments: Int!
+  pendingPayments: Int!
+  revenueByProvider: JSONObject!
+  successfulPayments: Int!
+  totalPayments: Int!
+  totalRevenue: Int!
+}
+
+"""Payment status enum"""
+enum PaymentStatus {
+  FAILED
+  INITIATED
+  PENDING
+  REFUNDED
+  SUCCESS
+}
+
+type Product {
+  averageRating: Float
+  category: Category
+  categoryId: String!
+  createdAt: DateTime!
+  description: String!
+  id: ID!
+  images: [String!]!
+  isActive: Boolean!
+  isFeatured: Boolean!
+  isLikedByMe: Boolean
+  likeCount: Int
+  lowStockThreshold: Int!
+  metaDescription: String
+  metaTitle: String
+  mrp: Int
+  price: Int!
+  reviewCount: Int
+  slug: String!
+  stock: Int!
+  thumbnail: String
+  title: String!
+  updatedAt: DateTime!
+}
+
+input ProductFiltersInput {
+  categoryId: String
+  inStock: Boolean
+  isActive: Boolean
+  isFeatured: Boolean
+  maxPrice: Int
+  minPrice: Int
+  search: String
+  sortBy: String
+  sortOrder: String
+}
+
+type ProductStats {
+  activeProducts: Int!
+  featuredProducts: Int!
+  inactiveProducts: Int!
+  lowStock: Int!
+  outOfStock: Int!
+  totalProducts: Int!
+}
+
+type ProductsResponse {
+  hasMore: Boolean!
+  products: [Product!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+type Query {
+  """Get all orders (admin only)"""
+  allOrders(skip: Int = 0, status: OrderStatus, take: Int = 50): OrdersResponse!
+
+  """Get all users (admin only)"""
+  allUsers(skip: Int = 0, take: Int = 20): UsersResponse!
+
+  """Get all categories"""
+  categories: [Category!]!
+
+  """Get category by ID"""
+  category(id: ID!): Category
+
+  """Get category by slug"""
+  categoryBySlug(slug: String!): Category
+
+  """Get featured products"""
+  featuredProducts(take: Int = 10): [Product!]!
+
+  """Get current user profile"""
+  me: User!
+
+  """Get user comments"""
+  myComments(skip: Int = 0, take: Int = 20): CommentsResponse!
+
+  """Get user orders"""
+  myOrders(skip: Int = 0, status: OrderStatus, take: Int = 20): OrdersResponse!
+
+  """Get user reviews"""
+  myReviews(skip: Int = 0, take: Int = 20): ReviewsResponse!
+
+  """Get order by ID"""
+  order(id: ID!): Order
+
+  """Get order statistics (admin only)"""
+  orderStats: OrderStats!
+
+  """Get order tracking history"""
+  orderTracking(orderId: ID!): [OrderTracking!]!
+
+  """Get payment by order ID"""
+  paymentByOrderId(orderId: ID!): Payment
+
+  """Get payment statistics (admin only)"""
+  paymentStats: PaymentStats!
+
+  """Get product by ID"""
+  product(id: ID!): Product
+
+  """Get product by slug"""
+  productBySlug(slug: String!): Product
+
+  """Get comments for a product"""
+  productComments(productId: ID!, skip: Int = 0, take: Int = 20): CommentsResponse!
+
+  """Get likes for a product"""
+  productLikes(productId: ID!, skip: Int = 0, take: Int = 20): [Like!]!
+
+  """Get reviews for a product"""
+  productReviews(productId: ID!, skip: Int = 0, take: Int = 20): ReviewsResponse!
+
+  """Get product statistics (admin only)"""
+  productStats: ProductStats!
+
+  """Get all products with filters"""
+  products(filters: ProductFiltersInput, skip: Int = 0, take: Int = 20): ProductsResponse!
+
+  """Get products by category"""
+  productsByCategory(categoryId: ID!, skip: Int = 0, take: Int = 20): ProductsResponse!
+
+  """Get root categories with children"""
+  rootCategories: [Category!]!
+
+  """Get user by ID (admin only)"""
+  user(id: ID!): User
+
+  """Get user statistics (admin only)"""
+  userStats: UserStats!
+}
+
+input RegisterInput {
+  email: String!
+  name: String
+  password: String!
+  phone: String
+}
+
+type Review {
+  createdAt: DateTime!
+  id: ID!
+  isHidden: Boolean!
+  isVerified: Boolean!
+  message: String!
+  product: Product
+  productId: ID!
+  rating: Int!
+  title: String
+  updatedAt: DateTime!
+  user: User
+  userId: ID!
+}
+
+type ReviewsResponse {
+  averageRating: Float!
+  hasMore: Boolean!
+  reviews: [Review!]!
+  skip: Int!
+  take: Int!
+  total: Int!
+}
+
+"""User role"""
+enum Role {
+  ADMIN
+  USER
+}
+
+input UpdateCategoryInput {
+  description: String
+  image: String
+  name: String
+  parentId: String
+  slug: String
+}
+
+input UpdateCommentInput {
+  content: String!
+}
+
+input UpdateOrderStatusInput {
+  note: String
+  status: OrderStatus!
+}
+
+input UpdateProductInput {
+  categoryId: String
+  description: String
+  images: [String!]
+  isActive: Boolean = true
+  isFeatured: Boolean = false
+  lowStockThreshold: Int = 10
+  metaDescription: String
+  metaTitle: String
+  mrp: Int
+  price: Int
+  slug: String
+  stock: Int
+  thumbnail: String
+  title: String
+}
+
+input UpdateProfileInput {
+  name: String
+  phone: String
+}
+
+input UpdateReviewInput {
+  message: String
+  rating: Int
+  title: String
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  isActive: Boolean!
+  name: String
+  phone: String
+  role: Role!
+  updatedAt: DateTime!
+}
+
+type UserStats {
+  activeUsers: Int!
+  adminUsers: Int!
+  inactiveUsers: Int!
+  totalUsers: Int!
+}
+
+type UsersResponse {
+  hasMore: Boolean!
+  skip: Int!
+  take: Int!
+  total: Int!
+  users: [User!]!
+}

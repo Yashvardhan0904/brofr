@@ -1,0 +1,402 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS - Type Safety First
+// ============================================
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING           // Order created, awaiting payment
+  PAID              // Payment successful
+  PROCESSING        // Being prepared
+  SHIPPED           // Out for delivery
+  DELIVERED         // Completed successfully
+  CANCELLED         // Cancelled by user/admin
+  RETURNED          // Return initiated
+  REFUNDED          // Money returned
+}
+
+enum PaymentStatus {
+  INITIATED         // Payment started
+  SUCCESS           // Payment confirmed
+  FAILED            // Payment failed
+  REFUNDED          // Money returned
+  PENDING           // Awaiting confirmation
+}
+
+enum PaymentProvider {
+  STRIPE
+  RAZORPAY
+  PAYPAL
+  COD               // Cash on Delivery
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  phone         String?   @unique
+  role          Role      @default(USER)
+  isActive      Boolean   @default(true)
+  
+  // Relationships
+  orders        Order[]
+  payments      Payment[]
+  reviews       Review[]
+  comments      Comment[]
+  likes         Like[]
+  addresses     Address[]
+  cart          CartItem[]
+  auditLogs     AuditLog[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([email])
+  @@index([phone])
+}
+
+// ============================================
+// ADDRESS - Separate for flexibility
+// ============================================
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fullName    String
+  phone       String
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  pincode     String
+  country     String   @default("India")
+  
+  isDefault   Boolean  @default(false)
+  
+  // Used in orders
+  orders      Order[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// ============================================
+// PRODUCT CATALOG
+// ============================================
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  parentId    String?
+  
+  // Self-referencing for nested categories
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  
+  products    Product[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([slug])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String   @db.Text
+  
+  // Pricing - Store in smallest unit (paise/cents)
+  price       Int      // Current price
+  mrp         Int?     // Maximum Retail Price (for discount calculation)
+  
+  // Inventory
+  stock       Int      @default(0)
+  lowStockThreshold Int @default(10)
+  
+  // Media
+  images      String[] // Array of image URLs
+  thumbnail   String?  // Main thumbnail
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Category
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  // Status
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  
+  // Relationships
+  reviews     Review[]
+  comments    Comment[]
+  likes       Like[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFeatured])
+}
+
+// ============================================
+// SOCIAL FEATURES
+// ============================================
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5
+  title     String?
+  message   String   @db.Text
+  
+  userId    String
+  productId String
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Moderation
+  isVerified Boolean @default(false) // Verified purchase
+  isHidden   Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, productId]) // One review per user per product
+  @@index([productId])
+  @@index([rating])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  
+  userId    String
+  productId String
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([productId])
+  @@index([userId])
+}
+
+model Like {
+  userId    String
+  productId String
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@id([userId, productId]) // Composite primary key
+  @@index([productId])
+}
+
+// ============================================
+// CART - Temporary storage before order
+// ============================================
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, productId]) // One cart item per product per user
+  @@index([userId])
+}
+
+// ============================================
+// ORDERS - IMMUTABLE DESIGN (Critical!)
+// ============================================
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique // Human-readable order number
+  
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  
+  // Status tracking
+  status          OrderStatus @default(PENDING)
+  
+  // Pricing snapshot (NEVER recalculate from products!)
+  subtotal        Int         // Sum of all items
+  tax             Int         @default(0)
+  shippingCharge  Int         @default(0)
+  discount        Int         @default(0)
+  totalAmount     Int         // Final amount paid
+  
+  // Shipping address snapshot (in case address is deleted)
+  addressId       String?
+  address         Address?    @relation(fields: [addressId], references: [id])
+  
+  // Snapshot of address at time of order (for data integrity)
+  shippingName    String
+  shippingPhone   String
+  shippingLine1   String
+  shippingLine2   String?
+  shippingCity    String
+  shippingState   String
+  shippingPincode String
+  shippingCountry String
+  
+  // Relationships
+  items           OrderItem[]
+  payment         Payment?
+  trackingEvents  OrderTracking[]
+  
+  // Metadata
+  notes           String?     @db.Text
+  cancelReason    String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+}
+
+// Order Items - Price snapshot at time of purchase
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  productId       String
+  
+  // Snapshot data (product might change/delete later)
+  productTitle    String
+  productImage    String?
+  quantity        Int
+  pricePerUnit    Int     // Price at time of purchase
+  totalPrice      Int     // quantity * pricePerUnit
+  
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
+  
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ============================================
+// PAYMENTS - Financial Safety First
+// ============================================
+
+model Payment {
+  id              String          @id @default(cuid())
+  orderId         String          @unique
+  userId          String
+  
+  amount          Int             // Amount in smallest unit
+  currency        String          @default("INR")
+  status          PaymentStatus   @default(INITIATED)
+  provider        PaymentProvider
+  
+  // Provider-specific data
+  providerOrderId   String?       // Razorpay order_id, Stripe payment_intent
+  providerPaymentId String?       // Razorpay payment_id, Stripe charge_id
+  providerSignature String?       // For verification
+  
+  // Metadata
+  paymentMethod   String?         // card, upi, netbanking, wallet
+  failureReason   String?
+  
+  // Idempotency
+  idempotencyKey  String          @unique
+  
+  // Relationships
+  order           Order           @relation(fields: [orderId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([providerOrderId])
+}
+
+// ============================================
+// ORDER TRACKING - Audit Trail
+// ============================================
+
+model OrderTracking {
+  id          String      @id @default(cuid())
+  orderId     String
+  status      OrderStatus
+  note        String?     @db.Text
+  location    String?     // For shipping updates
+  
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime    @default(now())
+  
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+// ============================================
+// AUDIT LOG - Track everything important
+// ============================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // LOGIN, ORDER_CREATED, PAYMENT_SUCCESS, etc.
+  resource    String   // Order:123, Product:456
+  metadata    Json?    // Additional context
+  ipAddress   String?
+  userAgent   String?
+  
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

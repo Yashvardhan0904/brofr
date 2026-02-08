@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Prisma
+/generated/prisma
+
+# Documentation and non-essential files (kept locally, not pushed to GitHub)
+_docs/
+*.md
+!README.md
+PHASE*.md
+*-COMPLETE.md
+*-GUIDE.md
+*-DOCUMENTATION.md
+*-OVERVIEW.md
+*-STATUS.md
+*-NOTES.md
+*-INSTRUCTIONS.txt
+docker-compose.yml
+k8s-deployment.yaml
+Dockerfile
+.dockerignore
+
+# Test files (not needed in production)
+*.spec.ts
+*.test.ts
+*integration.spec.ts
+src/integration/
+src/common/data-integrity.spec.ts
+src/common/error-handling.spec.ts
+src/common/security.spec.ts
+src/common/simple.spec.ts
