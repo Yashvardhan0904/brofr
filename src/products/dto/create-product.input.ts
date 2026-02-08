@@ -61,9 +61,10 @@ export class CreateProductInput {
   @IsString()
   thumbnail?: string;
 
-  @Field()
+  @Field(() => String, { nullable: true })
+  @IsOptional()
   @IsString()
-  categoryId: string;
+  categoryId?: string;
 
   @Field({ nullable: true })
   @IsOptional()

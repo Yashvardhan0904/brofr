@@ -148,8 +148,8 @@ model Product {
   metaDescription String?
   
   // Category
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
   
   // Status
   isActive    Boolean  @default(true)

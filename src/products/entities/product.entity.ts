@@ -36,8 +36,8 @@ export class Product {
   @Field(() => Category, { nullable: true })
   category?: Category;
 
-  @Field()
-  categoryId: string;
+  @Field(() => String, { nullable: true })
+  categoryId?: string;
 
   @Field(() => String, { nullable: true })
   metaTitle?: string | null;

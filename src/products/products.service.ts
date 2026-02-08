@@ -12,7 +12,7 @@ import { Product } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Create a new product (admin only)
@@ -29,13 +29,39 @@ export class ProductsService {
       throw new ConflictException('Product with this slug already exists');
     }
 
-    // Verify category exists
-    const category = await this.prisma.category.findUnique({
-      where: { id: categoryId },
-    });
+    let finalCategoryId = categoryId;
 
-    if (!category) {
-      throw new NotFoundException('Category not found');
+    // Auto-generate/Assign default category if missing
+    if (!finalCategoryId) {
+      const defaultCategory = await this.prisma.category.findFirst({
+        where: { slug: 'uncategorized' },
+      });
+
+      if (defaultCategory) {
+        finalCategoryId = defaultCategory.id;
+      } else {
+        const newCategory = await this.prisma.category.create({
+          data: {
+            name: 'Uncategorized',
+            slug: 'uncategorized',
+            description: 'Default category for masterpieces awaiting classification.',
+          },
+        });
+        finalCategoryId = newCategory.id;
+      }
+    }
+
+    // Verify category exists if provided
+    if (finalCategoryId && finalCategoryId !== categoryId) {
+      // Already handled by auto-generation
+    } else if (finalCategoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: finalCategoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
     }
 
     // Validate pricing
@@ -48,7 +74,7 @@ export class ProductsService {
       data: {
         title,
         slug,
-        categoryId,
+        categoryId: finalCategoryId,
         price,
         mrp,
         stock,

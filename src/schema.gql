@@ -89,7 +89,7 @@ input CreateOrderInput {
 }
 
 input CreateProductInput {
-  categoryId: String!
+  categoryId: String
   description: String!
   images: [String!]!
   isActive: Boolean = true
