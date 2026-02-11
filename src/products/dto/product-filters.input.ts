@@ -13,6 +13,11 @@ export class ProductFiltersInput {
   @IsString()
   categoryId?: string;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  categorySlug?: string;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()

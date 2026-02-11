@@ -61,6 +61,16 @@ async function main() {
   // Create categories
   const categories = [
     {
+      name: 'Uncategorized',
+      slug: 'uncategorized',
+      description: 'Default category for products awaiting classification',
+    },
+    {
+      name: 'Statues',
+      slug: 'statues',
+      description: 'Beautiful handcrafted statues of deities and spiritual figures',
+    },
+    {
       name: 'Sacred Jewelry',
       slug: 'sacred-jewelry',
       description: 'Handcrafted spiritual jewelry with sacred symbols',
@@ -71,9 +81,29 @@ async function main() {
       description: 'Tools to enhance your meditation practice',
     },
     {
+      name: 'Incense & Aromatherapy',
+      slug: 'incense-aromatherapy',
+      description: 'Premium incense, essential oils and aromatherapy products',
+    },
+    {
+      name: 'Crystals & Gemstones',
+      slug: 'crystals-gemstones',
+      description: 'Natural healing crystals and precious gemstones',
+    },
+    {
       name: 'Spiritual Textiles',
       slug: 'spiritual-textiles',
-      description: 'Sacred textiles and fabrics for spiritual practices',
+      description: 'Sacred textiles, tapestries and fabrics for spiritual practices',
+    },
+    {
+      name: 'Home Decor',
+      slug: 'home-decor',
+      description: 'Spiritual and luxury home decoration items',
+    },
+    {
+      name: 'Books & Journals',
+      slug: 'books-journals',
+      description: 'Spiritual books, guided journals and sacred texts',
     },
   ];
 

@@ -31,8 +31,18 @@ export class ProductsService {
 
     let finalCategoryId = categoryId;
 
-    // Auto-generate/Assign default category if missing
-    if (!finalCategoryId) {
+    // If a categoryId was provided, verify it exists
+    if (categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+      finalCategoryId = categoryId;
+    } else {
+      // No category provided - assign default "Uncategorized" category
       const defaultCategory = await this.prisma.category.findFirst({
         where: { slug: 'uncategorized' },
       });
@@ -40,27 +50,28 @@ export class ProductsService {
       if (defaultCategory) {
         finalCategoryId = defaultCategory.id;
       } else {
-        const newCategory = await this.prisma.category.create({
-          data: {
-            name: 'Uncategorized',
-            slug: 'uncategorized',
-            description: 'Default category for masterpieces awaiting classification.',
-          },
-        });
-        finalCategoryId = newCategory.id;
-      }
-    }
-
-    // Verify category exists if provided
-    if (finalCategoryId && finalCategoryId !== categoryId) {
-      // Already handled by auto-generation
-    } else if (finalCategoryId) {
-      const category = await this.prisma.category.findUnique({
-        where: { id: finalCategoryId },
-      });
-
-      if (!category) {
-        throw new NotFoundException('Category not found');
+        // Create uncategorized category if it doesn't exist (fallback)
+        try {
+          const newCategory = await this.prisma.category.create({
+            data: {
+              name: 'Uncategorized',
+              slug: 'uncategorized',
+              description: 'Default category for products awaiting classification',
+            },
+          });
+          finalCategoryId = newCategory.id;
+        } catch (error) {
+          // Category might have been created by another request - try to fetch it again
+          const existingCategory = await this.prisma.category.findFirst({
+            where: { slug: 'uncategorized' },
+          });
+          if (existingCategory) {
+            finalCategoryId = existingCategory.id;
+          } else {
+            // If still can't get it, allow null categoryId (schema supports it)
+            finalCategoryId = undefined;
+          }
+        }
       }
     }
 
@@ -108,6 +119,13 @@ export class ProductsService {
 
       if (filters.categoryId) {
         where.categoryId = filters.categoryId;
+      }
+
+      // Filter by category slug
+      if (filters.categorySlug) {
+        where.category = {
+          slug: filters.categorySlug,
+        };
       }
 
       if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
