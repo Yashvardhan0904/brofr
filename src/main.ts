@@ -16,11 +16,12 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
-  // Security headers with production-optimized settings
+  // Security headers
   app.use(
     helmet({
-      contentSecurityPolicy: isProduction ? undefined : false,
+      contentSecurityPolicy: false, // Disable CSP - it can block GraphQL requests
       crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: false,
       hsts: isProduction
         ? {
             maxAge: 31536000, // 1 year
@@ -31,32 +32,9 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
-  // In production, allow Vercel preview URLs (*.vercel.app) + any custom domains from ALLOWED_ORIGINS
-  const extraOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
-  
+  // CORS - allow all origins (API uses Bearer token auth, not cookies, so this is safe)
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin (mobile apps, Postman, server-to-server, etc.)
-      if (!origin) return callback(null, true);
-
-      // In development, allow all localhost origins
-      if (!isProduction) {
-        return callback(null, true);
-      }
-
-      // In production: allow all *.vercel.app domains + configured origins
-      const isVercel = origin.endsWith('.vercel.app');
-      const isAllowed = isVercel || extraOrigins.includes(origin);
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        logger.warn(`CORS blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['X-Total-Count'],
@@ -98,9 +76,8 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`🚀 GraphQL API running on http://localhost:${port}/graphql`);
-  logger.log(`🔒 Security: Helmet, CORS, Rate Limiting enabled`);
+  logger.log(`🔒 Security: Helmet, CORS (open), Rate Limiting enabled`);
   logger.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.log(`🌐 Allowed Origins: ${allowedOrigins.join(', ')}`);
 
   if (!isProduction) {
     logger.log(`🎮 GraphQL Playground: http://localhost:${port}/graphql`);
