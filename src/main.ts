@@ -33,8 +33,11 @@ async function bootstrap() {
 
   // CORS configuration with environment-based origins
   const allowedOrigins = isProduction
-    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+    ? (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
     : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080', 'http://localhost:8081'];
+
+  logger.log(`Configured ALLOWED_ORIGINS env: "${process.env.ALLOWED_ORIGINS}"`);
+  logger.log(`Parsed allowed origins: ${JSON.stringify(allowedOrigins)}`);
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
@@ -44,7 +47,7 @@ async function bootstrap() {
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        logger.warn(`CORS blocked origin: ${origin}`);
+        logger.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
