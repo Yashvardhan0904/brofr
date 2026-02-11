@@ -31,23 +31,28 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration with environment-based origins
-  const allowedOrigins = isProduction
-    ? (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080', 'http://localhost:8081'];
-
-  logger.log(`Configured ALLOWED_ORIGINS env: "${process.env.ALLOWED_ORIGINS}"`);
-  logger.log(`Parsed allowed origins: ${JSON.stringify(allowedOrigins)}`);
-
+  // CORS configuration
+  // In production, allow Vercel preview URLs (*.vercel.app) + any custom domains from ALLOWED_ORIGINS
+  const extraOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+  
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
+      // Allow requests with no origin (mobile apps, Postman, server-to-server, etc.)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      // In development, allow all localhost origins
+      if (!isProduction) {
+        return callback(null, true);
+      }
+
+      // In production: allow all *.vercel.app domains + configured origins
+      const isVercel = origin.endsWith('.vercel.app');
+      const isAllowed = isVercel || extraOrigins.includes(origin);
+
+      if (isAllowed) {
         callback(null, true);
       } else {
-        logger.warn(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+        logger.warn(`CORS blocked origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
