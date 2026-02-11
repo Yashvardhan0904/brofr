@@ -366,7 +366,7 @@ enum PaymentStatus {
 type Product {
   averageRating: Float
   category: Category
-  categoryId: String!
+  categoryId: String
   createdAt: DateTime!
   description: String!
   id: ID!
@@ -390,6 +390,7 @@ type Product {
 
 input ProductFiltersInput {
   categoryId: String
+  categorySlug: String
   inStock: Boolean
   isActive: Boolean
   isFeatured: Boolean

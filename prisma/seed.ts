@@ -218,6 +218,101 @@ async function main() {
     }
   }
 
+  // ============================================
+  // SEED REVIEWS - Add ratings to products
+  // ============================================
+  
+  // Get all products and users for reviews
+  const allProducts = await prisma.product.findMany();
+  const customerUser = await prisma.user.findUnique({ where: { email: userEmail } });
+  
+  // Create additional review users
+  const reviewUsers = [];
+  const reviewerNames = [
+    { name: 'Priya Sharma', email: 'priya.sharma@example.com' },
+    { name: 'Arjun Patel', email: 'arjun.patel@example.com' },
+    { name: 'Meera Iyer', email: 'meera.iyer@example.com' },
+    { name: 'Rohan Gupta', email: 'rohan.gupta@example.com' },
+    { name: 'Ananya Reddy', email: 'ananya.reddy@example.com' },
+  ];
+
+  for (const reviewer of reviewerNames) {
+    let user = await prisma.user.findUnique({ where: { email: reviewer.email } });
+    if (!user) {
+      const hash = await bcrypt.hash('Reviewer@123', 10);
+      user = await prisma.user.create({
+        data: {
+          email: reviewer.email,
+          passwordHash: hash,
+          name: reviewer.name,
+          role: 'USER',
+          isActive: true,
+        },
+      });
+      console.log(`✅ Created reviewer: ${reviewer.name}`);
+    }
+    reviewUsers.push(user);
+  }
+  
+  if (customerUser) {
+    reviewUsers.push(customerUser);
+  }
+
+  // Review templates for each product
+  const reviewTemplates = [
+    { rating: 5, title: 'Absolutely beautiful!', message: 'The craftsmanship is incredible. Every detail is perfect. This is truly a sacred piece that brings peace to my home.' },
+    { rating: 5, title: 'Exceeded expectations', message: 'I was amazed by the quality. The description doesn\'t do it justice. A must-have for anyone on a spiritual journey.' },
+    { rating: 4, title: 'Very good quality', message: 'Beautiful piece with excellent craftsmanship. Arrived well-packaged. Would highly recommend to others.' },
+    { rating: 5, title: 'A divine addition', message: 'This piece has transformed my meditation space. The energy it brings is palpable. Truly blessed to own this.' },
+    { rating: 4, title: 'Lovely and authentic', message: 'Genuine quality, you can feel the artisan\'s devotion in every detail. Very happy with my purchase.' },
+    { rating: 5, title: 'Perfect gift', message: 'Bought this as a gift and it was received with so much joy. The quality speaks for itself. Will buy again.' },
+    { rating: 4, title: 'Wonderful craftsmanship', message: 'The attention to detail is remarkable. A beautiful blend of tradition and elegance.' },
+    { rating: 5, title: 'Spiritual and beautiful', message: 'This piece carries such positive energy. My meditation sessions have been deeper since I got this.' },
+    { rating: 3, title: 'Good but could be better', message: 'Nice product overall. The quality is decent. Delivery took a while but the product itself is good.' },
+    { rating: 5, title: 'Museum quality piece', message: 'I collect spiritual artifacts and this is among the finest I\'ve seen. Pure artistry and devotion.' },
+  ];
+
+  let reviewsCreated = 0;
+  
+  for (const product of allProducts) {
+    // Assign 3-5 random reviews per product
+    const numReviews = Math.floor(Math.random() * 3) + 3; // 3 to 5 reviews
+    const shuffledUsers = [...reviewUsers].sort(() => Math.random() - 0.5);
+    const shuffledTemplates = [...reviewTemplates].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < Math.min(numReviews, shuffledUsers.length); i++) {
+      const user = shuffledUsers[i];
+      const template = shuffledTemplates[i % shuffledTemplates.length];
+
+      // Check if review already exists
+      const existingReview = await prisma.review.findUnique({
+        where: {
+          userId_productId: {
+            userId: user.id,
+            productId: product.id,
+          },
+        },
+      });
+
+      if (!existingReview) {
+        await prisma.review.create({
+          data: {
+            rating: template.rating,
+            title: template.title,
+            message: template.message,
+            userId: user.id,
+            productId: product.id,
+            isVerified: Math.random() > 0.3, // 70% verified
+            isHidden: false,
+          },
+        });
+        reviewsCreated++;
+      }
+    }
+  }
+  
+  console.log(`✅ Created ${reviewsCreated} reviews across ${allProducts.length} products`);
+
   console.log('\n🎉 Database seeding completed!');
   console.log('\n📧 Admin Login Credentials:');
   console.log('   Email:', adminEmail);

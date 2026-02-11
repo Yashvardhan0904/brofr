@@ -564,31 +564,48 @@ export class SocialService {
   }
 
   /**
-   * Get review count for a product
+   * Get review count for a product (includes likes as engagements)
    */
   async getReviewCount(productId: string): Promise<number> {
-    return this.prisma.review.count({
-      where: {
-        productId,
-        isHidden: false,
-      },
-    });
+    const [reviewCount, likeCount] = await Promise.all([
+      this.prisma.review.count({
+        where: {
+          productId,
+          isHidden: false,
+        },
+      }),
+      this.prisma.like.count({ where: { productId } }),
+    ]);
+
+    return reviewCount + likeCount;
   }
 
   /**
    * Get average rating for a product
+   * Combines review ratings + likes (each like = implicit 5-star vote)
    */
   async getAverageRating(productId: string): Promise<number> {
-    const result = await this.prisma.review.aggregate({
-      where: {
-        productId,
-        isHidden: false,
-      },
-      _avg: {
-        rating: true,
-      },
-    });
+    const [reviewAgg, likeCount] = await Promise.all([
+      this.prisma.review.aggregate({
+        where: {
+          productId,
+          isHidden: false,
+        },
+        _avg: { rating: true },
+        _sum: { rating: true },
+        _count: { rating: true },
+      }),
+      this.prisma.like.count({ where: { productId } }),
+    ]);
 
-    return result._avg.rating || 0;
+    const reviewSum = reviewAgg._sum.rating || 0;
+    const reviewCount = reviewAgg._count.rating || 0;
+    const totalPoints = reviewSum + (likeCount * 5);
+    const totalVotes = reviewCount + likeCount;
+
+    if (totalVotes === 0) return 0;
+
+    // Round to 1 decimal place
+    return Math.round((totalPoints / totalVotes) * 10) / 10;
   }
 }

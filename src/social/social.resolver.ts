@@ -285,9 +285,9 @@ export class ProductSocialResolver {
   }
 
   /**
-   * Field resolver: averageRating
+   * Field resolver: averageRating - Returns float (e.g., 4.5)
    */
-  @ResolveField(() => Int, { nullable: true })
+  @ResolveField(() => Number, { nullable: true })
   async averageRating(@Parent() product: Product): Promise<number> {
     return this.socialService.getAverageRating(product.id);
   }
