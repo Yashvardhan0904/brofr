@@ -52,6 +52,8 @@ model User {
   passwordHash  String
   name          String?
   phone         String?   @unique
+  avatar        String?
+  googleId      String?   @unique
   role          Role      @default(USER)
   isActive      Boolean   @default(true)
   

@@ -205,4 +205,64 @@ export class AuthService {
 
     return true;
   }
+
+  /**
+   * Google OAuth login - find or create user
+   */
+  async googleLogin(googleUser: {
+    googleId: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  }): Promise<{ user: User; token: string }> {
+    const { googleId, email, name, avatar } = googleUser;
+
+    // First, try to find user by googleId
+    let user = await this.prisma.user.findUnique({
+      where: { googleId },
+    });
+
+    if (!user) {
+      // Try to find user by email (existing email/password user linking Google)
+      user = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (user) {
+        // Link Google account to existing user
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            googleId,
+            ...(avatar && !user.name ? { name } : {}),
+          },
+        });
+      } else {
+        // Create new user with Google account (no password needed)
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            googleId,
+            name: name || email.split('@')[0],
+            passwordHash: '', // No password for Google-only users
+          },
+        });
+      }
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
+
+    // Generate JWT token
+    const token = this.generateToken(user);
+
+    // Log Google login
+    await this.auditService.logAuth('GOOGLE_LOGIN', user.id, '0.0.0.0', {
+      email: user.email,
+      provider: 'google',
+    } as Record<string, any>);
+
+    return { user, token };
+  }
 }

@@ -44,7 +44,7 @@ export class AuditService {
    * Log authentication events
    */
   async logAuth(
-    action: 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'REGISTER' | 'LOGOUT',
+    action: 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'REGISTER' | 'LOGOUT' | 'GOOGLE_LOGIN',
     userId: string | null,
     ipAddress?: string,
     metadata?: Record<string, any>,

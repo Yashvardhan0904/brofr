@@ -31,7 +31,7 @@ import { GraphQLExceptionFilter } from './common/filters/graphql-exception.filte
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
         playground: process.env.NODE_ENV !== 'production',
-        introspection: true, // Keep introspection enabled for Apollo Client
+        introspection: process.env.NODE_ENV !== 'production',
         context: ({ req, res }: { req: any; res: any }) => {
           console.log('=== CONTEXT CREATION ===');
           console.log('req exists:', !!req);

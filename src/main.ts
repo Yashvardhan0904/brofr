@@ -16,12 +16,11 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
-  // Security headers
+  // Security headers with production-optimized settings
   app.use(
     helmet({
-      contentSecurityPolicy: false, // Disable CSP - it can block GraphQL requests
+      contentSecurityPolicy: isProduction ? undefined : false,
       crossOriginEmbedderPolicy: false,
-      crossOriginResourcePolicy: false,
       hsts: isProduction
         ? {
             maxAge: 31536000, // 1 year
@@ -32,9 +31,24 @@ async function bootstrap() {
     }),
   );
 
-  // CORS - allow all origins (API uses Bearer token auth, not cookies, so this is safe)
+  // CORS configuration with environment-based origins
+  const allowedOrigins = isProduction
+    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080', 'http://localhost:8081'];
+
   app.enableCors({
-    origin: true,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['X-Total-Count'],
@@ -76,8 +90,9 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`🚀 GraphQL API running on http://localhost:${port}/graphql`);
-  logger.log(`🔒 Security: Helmet, CORS (open), Rate Limiting enabled`);
+  logger.log(`🔒 Security: Helmet, CORS, Rate Limiting enabled`);
   logger.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.log(`🌐 Allowed Origins: ${allowedOrigins.join(', ')}`);
 
   if (!isProduction) {
     logger.log(`🎮 GraphQL Playground: http://localhost:${port}/graphql`);
