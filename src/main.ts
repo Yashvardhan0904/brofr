@@ -16,11 +16,12 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
-  // Security headers with production-optimized settings
+  // Security headers
   app.use(
     helmet({
-      contentSecurityPolicy: isProduction ? undefined : false,
+      contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: false,
       hsts: isProduction
         ? {
             maxAge: 31536000, // 1 year
@@ -31,23 +32,9 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration with environment-based origins
-  const allowedOrigins = isProduction
-    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080', 'http://localhost:8081'];
-
+  // CORS - allow all origins
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        logger.warn(`CORS blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -90,9 +77,8 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`🚀 GraphQL API running on http://localhost:${port}/graphql`);
-  logger.log(`🔒 Security: Helmet, CORS, Rate Limiting enabled`);
+  logger.log(`🔒 Security: Helmet, CORS (open), Rate Limiting enabled`);
   logger.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.log(`🌐 Allowed Origins: ${allowedOrigins.join(', ')}`);
 
   if (!isProduction) {
     logger.log(`🎮 GraphQL Playground: http://localhost:${port}/graphql`);
